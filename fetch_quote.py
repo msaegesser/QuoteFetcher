@@ -6,34 +6,72 @@ import requests
 import sys
 import json
 
-def create_dict_from_respObject(respObj: requests.Response) -> dict:
+class QuoteFetcher():
     """
-    creates a dict from the response object
+    helper class to fetch quotes from url
     """
-    return json.loads(respObj.text)
+    _inDebug: bool = False
+    _baseUrl: str = ""
+    _currentQuote: dict = {"quote": str,
+                           "author": str}
 
-def print_quote(quote: dict):
-    """
-    formats and prints out the quote.
-    """
-    print("--- random quote ---")
-    print(f'"{quote["q"]}" from {quote["a"]}')
+    def __init__(self, url) -> None:
+        """
+        init method
+        """
+        if self._inDebug:
+            print(f"passed url: {url}")
 
-def fetch_quote(url: str) -> requests.Response:
-    """
-    simple quote fetch function
-    """
-    return requests.post(url)
+        self._baseUrl = url
+    
+    def getRandomQuote(self) -> dict:
+        """
+        get a random quote from the url
+        """
+        req_cmd: str = self._baseUrl + "/api/random"
+        if self._inDebug:
+            print(f"request command: {req_cmd}")
+        
+        resp: requests.Response = requests.post(req_cmd)
+        if self._inDebug:
+            print(f"request respone: {resp}")
+
+        return self._create_dict_from_respObject(resp)
+        
+    def _create_dict_from_respObject(self, respObj: requests.Response) -> dict:
+        """
+        creates a dict from the response object
+        """
+        tempDict: dict = json.loads(respObj.text)
+        if self._inDebug:
+            print(f"temporary dict: {tempDict}")
+        
+        definitveDict: dict = {"quote": tempDict[0]["q"],
+                               "author": tempDict[0]["a"]}
+        
+        if self._inDebug:
+            print(f"definitive dict: {definitveDict}")
+
+        return definitveDict
+
+    def print_quote(self, quote: dict) -> None:
+        """
+        formats and prints out the quote.
+        """
+        print("--- random quote ---")
+        print(f'"{quote["quote"]}" - {quote["author"]}')
 
 def main():
     """
     main entry point
     """
-    url = "https://zenquotes.io/api/random"
-    
-    quote = fetch_quote(url)
+    baseUrl = "https://zenquotes.io/"
 
-    print_quote(create_dict_from_respObject(quote)[0])
+    # create object
+    quoteFetcher: QuoteFetcher = QuoteFetcher(baseUrl)
+    # get random quote
+    quote: dict = quoteFetcher.getRandomQuote()
+    quoteFetcher.print_quote(quote)
 
 
 if __name__ == '__main__':
